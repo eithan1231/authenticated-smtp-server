@@ -10,7 +10,7 @@ module.exports = class SMTPDelivery
 	static send(sender, recipient, message)
 	{
 		return new Promise(async (resolve, reject) => {
-			const parsedRecipient = utillities.parseAddress(recipient);
+			const parsedRecipient = utilities.parseAddress(recipient);
 			if(!parsedRecipient) {
 				return resolve(false);
 			}
