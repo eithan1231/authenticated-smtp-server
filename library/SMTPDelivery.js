@@ -53,6 +53,7 @@ module.exports = class SMTPDelivery
 					}
 				}
 			}
+			return resolve(false);
 		});
 	}
 }
