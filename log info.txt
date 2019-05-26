@@ -1,0 +1,19 @@
+Just for future reference.
+
+Each and ever log SHOULD have 'txn' parameter set. 'txn' will indicate the event
+which occured. Documentation for events are listed below.
+
+
+txn 'auth'
+prameters:
+	address - the address that was attempted to login with
+	ip - the IP address that tried logging in.
+	status - basically a status of the login. Possible values: ('bad-address', 'bad-password', 'okay')
+
+
+txn 'send'
+parameters:
+	success - (boolean) whether or not it was successful
+	sender - Person who is sending email
+	recipient - person who be receiving email
+	subjcet - subject of email

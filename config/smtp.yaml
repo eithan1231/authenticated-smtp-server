@@ -1,0 +1,57 @@
+production:
+  # Domain name which is associated with this server. eg: example.com
+  serverDomain: example.com
+
+  # hostname of this node. It MUST resolve to the IP of the server.
+  hostname: 1._smtpdelivery.example.com
+
+  # Private/Public keys the server uses for listening.
+  serverSSL:
+    key: server.key
+    cert: server.cert
+    ca: false
+
+  # DKIM (DomainKeys Identified Mail)
+  dkim:
+    # NOTE: uses the domain name of the serverDomain variable (as seen above)
+
+    # Whether or not we want to enable dkim signing
+    enabled: true
+
+    # Key selector. This is the domain key selector which we use to query the
+    # public key from DNS records.
+    # Syntax for TXT record containing public key:
+    # {keySelector}._domainkey.{serverDomain}
+    keySelector: "dkim"
+
+    # File location of the private key. It is relative to the config folder.
+    key: dkim.key
+
+development:
+  # Domain name which is associated with this server. eg: example.com
+  serverDomain: fkya.net
+
+  # hostname of this node. It MUST resolve to the IP of the server.
+  hostname: 1.mx.fkya.net
+
+  # Private/Public keys the server uses for listening.
+  serverSSL:
+    key: server.key
+    cert: server.cert
+    ca: false
+
+  # DKIM (DomainKeys Identified Mail)
+  dkim:
+    # NOTE: uses the domain name of the serverDomain variable (as seen above)
+
+    # Whether or not we want to enable dkim signing
+    enabled: true
+
+    # Key selector. This is the domain key selector which we use to query the
+    # public key from DNS records.
+    # Syntax for TXT record containing public key:
+    # {keySelector}._domainkey.{serverDomain}
+    keySelector: "dkim"
+
+    # File location of the private key. It is relative to the config folder.
+    key: dkim.key
