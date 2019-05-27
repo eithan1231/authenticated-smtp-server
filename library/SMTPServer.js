@@ -334,7 +334,9 @@ module.exports = class SMTPServer extends SMTPServerExtendable
 		else {
 			message.attachments.forEach(attachment => {
 				fs.unlink(attachment.path, err => {
-					this.logger.error(err);
+					if(err) {
+						this.logger.error(err);
+					}
 				});
 			});
 		}

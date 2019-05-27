@@ -22,6 +22,12 @@ const smtpServer = new SMTPServer({
 });
 
 smtpServer.on('error', (err) => {
-
+	// Check if its the type of erro that will kill the smtpServer.
 });
 smtpServer.listen(port);
+
+process.on("SIGINT", () => {
+	smtpServer.close(() => {
+		process.ext(1);
+	});	
+});
