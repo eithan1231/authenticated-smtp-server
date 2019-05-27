@@ -1,4 +1,5 @@
 const winston = require('winston');
+const winstonFileRotator = require('winston-daily-rotate-file');
 const path = require('path');
 const logdir = path.join(__dirname, '../logs');
 const argument = require('./argument');
@@ -9,13 +10,19 @@ module.exports = winston.createLogger({
   level: 'info',
   format: winston.format.json(),
   transports: [
-    new winston.transports.File({
-			filename: path.join(logdir, `${filenamePrefix}-error.log`),
-			level: 'error'
+    new winstonFileRotator({
+			filename: `${filenamePrefix}-%DATE%-error.log`,
+			dirname: logdir,
+			level: 'error',
+			zippedArchive: true,
+			maxFiles: 32,
 		}),
 
-    new winston.transports.File({
-			filename: path.join(logdir, `${filenamePrefix}-log.log`),
+    new winstonFileRotator({
+			filename: `${filenamePrefix}-%DATE%-log.log`,
+			dirname: logdir,
+			zippedArchive: true,
+			maxFiles: 32,
 		})
 	]
 });
