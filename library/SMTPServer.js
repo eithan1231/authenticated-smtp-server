@@ -1,9 +1,13 @@
 const SMTPServerExtendable = require("smtp-server").SMTPServer;
 const utillities = require('./utilities');
+const config = require('./config');
 const MailParser = require('./MailParser');
 const SMTPDelivery = require('./SMTPDelivery');
 const tmp = require('tmp');
 const fs = require('fs');
+
+const smtpConfig = config.readConfigSync('smtp.yaml');
+
 
 module.exports = class SMTPServer extends SMTPServerExtendable
 {
@@ -35,6 +39,7 @@ module.exports = class SMTPServer extends SMTPServerExtendable
 	*/
 	onConnect(session, cb)
 	{
+		session.recipients = [];
 		cb();
 	}
 
@@ -59,7 +64,7 @@ module.exports = class SMTPServer extends SMTPServerExtendable
 		const parsedAddress = utillities.parseAddress(auth.username);
 		if(!parsedAddress) {
 			this.logger.info({
-				txn: 'auth',
+				txn: 'svr-auth',
 				ip: session.remoteAddress,
 				address: auth.username,
 				status: 'bad-address'
@@ -71,7 +76,7 @@ module.exports = class SMTPServer extends SMTPServerExtendable
 			// Logging in with an account which isn't even associated with this mail
 			// server
 			this.logger.info({
-				txn: 'auth',
+				txn: 'svr-auth',
 				ip: session.remoteAddress,
 				address: auth.username,
 				status: 'bad-address'
@@ -86,7 +91,7 @@ module.exports = class SMTPServer extends SMTPServerExtendable
 
 			if(!data.valid) {
 				this.logger.info({
-					txn: 'auth',
+					txn: 'svr-auth',
 					ip: session.remoteAddress,
 					address: auth.username,
 					status: (data.badPassword ? 'bad-password' : 'bad-address')
@@ -95,7 +100,7 @@ module.exports = class SMTPServer extends SMTPServerExtendable
 			}
 
 			this.logger.info({
-				txn: 'auth',
+				txn: 'svr-auth',
 				ip: session.remoteAddress,
 				address: auth.username,
 				status: 'okay'
@@ -126,7 +131,7 @@ module.exports = class SMTPServer extends SMTPServerExtendable
 		// valid
 		if(
 			!parsedAddress ||
-			parsedAddress.domain != smtpConfig.domain ||
+			parsedAddress.domain != smtpConfig.serverDomain ||
 			typeof session.user == 'undefined' ||
 			session.user === null ||
 			parsedAddress.localpart != session.user.localpart
@@ -145,6 +150,7 @@ module.exports = class SMTPServer extends SMTPServerExtendable
 	*/
 	onRcptTo(address, session, cb)
 	{
+		session.recipients.push(address);
 		cb();
 	}
 
@@ -199,7 +205,7 @@ module.exports = class SMTPServer extends SMTPServerExtendable
 			value: 'github.com/eithan1231/authenticated-smtp-server'
 		});
 
-		for(let header in message.headers) {
+		for(let header of headers) {
 			switch (header.key.toLowerCase()) {
 				case 'subject': {
 					message.subject = header.value;
@@ -303,12 +309,10 @@ module.exports = class SMTPServer extends SMTPServerExtendable
 	*/
 	async _onEnd(session, message)
 	{
-		let preserveAttachments = false;
-
-		for(let recipient of session.envelope.rcptTo) {
+		for(let recipient of session.recipients) {
 			if(await SMTPDelivery.send(session.user, recipient.address, message)) {
 				this.logger.info({
-					txn: 'send',
+					txn: 'svr-send',
 					success: true,
 					sender: session.user.localpart,
 					recipient: recipient.address,
@@ -316,9 +320,8 @@ module.exports = class SMTPServer extends SMTPServerExtendable
 				});
 			}
 			else {
-				//preserveAttachments = true;
 				this.logger.info({
-					txn: 'send',
+					txn: 'svr-send',
 					success: false,
 					sender: session.user.localpart,
 					recipient: recipient.address,
@@ -328,18 +331,13 @@ module.exports = class SMTPServer extends SMTPServerExtendable
 		}
 
 		// Cleanup attachments
-		if(preserveAttachments) {
-			// TODO: Attempt to resend at a later time.
-		}
-		else {
-			message.attachments.forEach(attachment => {
-				fs.unlink(attachment.path, err => {
-					if(err) {
-						this.logger.error(err);
-					}
-				});
+		message.attachments.forEach(attachment => {
+			fs.unlink(attachment.path, err => {
+				if(err) {
+					this.logger.error(err);
+				}
 			});
-		}
+		});
 	}
 
 	/**

@@ -5,30 +5,36 @@ module.exports = class utilities
 {
 	/**
 	* Resolves MX hostnames and sorts by priority.
-	*
+	* NOTE: On exception, it just resolves false.
 	* @param hostname The domain which we want to retreive mx records of.
 	*/
 	static resolveMXRecords(hostname)
 	{
 		return new Promise(async (resolve, reject) => {
-			const resolver = new PromiseDNSResolver();
-			let records = await resolver.resolveMx(hostname);
-			if(!records || !records.length) {
+			try {
+				const resolver = new PromiseDNSResolver();
+				let records = await resolver.resolveMx(hostname);
+				if(!records || !records.length) {
+					return resolve(false);
+				}
+
+				// Sorting MX priorities
+				records.sort((a, b) => {
+					if (a.priority < b.priority) {
+						return -1;
+					}
+					if (a.priority > b.priority) {
+						return 1;
+					}
+					return 0;
+				});
+
+				return resolve(records);
+			}
+			catch(err) {
+				// More than probable that there are just no mx records.
 				return resolve(false);
 			}
-
-			// Sorting MX priorities
-			records.sort((a, b) => {
-				if (a.priority < b.priority) {
-					return -1;
-				}
-				if (a.priority > b.priority) {
-					return 1;
-				}
-				return 0;
-			});
-
-			return resolve(records);
 		});
 	}
 
@@ -40,8 +46,9 @@ module.exports = class utilities
 	*/
 	static parseAddress(address)
 	{
-		const lpe = address.indexOf('@');//localpart end
-		if(lpe < 0) {
+		const lpe = address.lastIndexOf('@');//localpart end
+		const firstLpe = address.indexOf('@');
+		if(lpe < 0 || firstLpe != lpe) {
 			return false;
 		}
 

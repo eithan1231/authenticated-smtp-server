@@ -18,7 +18,7 @@ class config
 		return new Promise(async (resolve, reject) => {
 			const pathToConfig = path.join(__dirname, '../', 'config', filename);
 
-			fs.readFile(pathToConfig, async (err, dat) => {
+			fs.readFile(pathToConfig, {encoding: 'utf8'}, async (err, dat) => {
 				if(err) {
 					return reject(err);
 				}
@@ -66,7 +66,7 @@ class config
 
 		const pathToConfig = path.join(__dirname, '../config', filename);
 
-		let dat = fs.readFileSync(pathToConfig);
+		let dat = fs.readFileSync(pathToConfig, {encoding: 'utf8'});
 		switch (path.extname(filename)) {
 			case '.yml':
 			case '.yaml': {

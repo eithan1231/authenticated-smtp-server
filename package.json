@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "mocha tests/index.js"
   },
   "author": "Eithan",
   "license": "MIT",
@@ -18,5 +18,8 @@
     "tmp": "^0.1.0",
     "winston": "^3.2.1",
     "winston-daily-rotate-file": "^3.9.0"
+  },
+  "devDependencies": {
+    "mocha": "^6.1.4"
   }
 }

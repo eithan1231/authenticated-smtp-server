@@ -22,7 +22,7 @@ production:
     # public key from DNS records.
     # Syntax for TXT record containing public key:
     # {keySelector}._domainkey.{serverDomain}
-    keySelector: "dkim"
+    keySelector: "default"
 
     # File location of the private key. It is relative to the config folder.
     key: dkim.key
@@ -51,7 +51,7 @@ development:
     # public key from DNS records.
     # Syntax for TXT record containing public key:
     # {keySelector}._domainkey.{serverDomain}
-    keySelector: "dkim"
+    keySelector: "test"
 
     # File location of the private key. It is relative to the config folder.
     key: dkim.key

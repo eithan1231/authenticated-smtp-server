@@ -23,16 +23,16 @@ module.exports = class SMTPDelivery
 			for(let recipientMXRecord of recipientMXRecords)
 			{
 				let dkim = null;
-				if(smtpConfig.dkim.enabled || false) {
+				if(smtpConfig.dkim.enabled) {
 					dkim = {
 						domainName: smtpConfig.serverDomain,
 						keySelector: smtpConfig.dkim.keySelector,
-						privateKey: (await config.reaDConfig(smtpConfig.dkim.key)),
+						privateKey: (await config.readConfig(smtpConfig.dkim.key)),
 						cacheDir: os.tmpdir(),
 					};
 				}
 
-				const tramsporter = nodemailer.createTransport({
+				const transporter = nodemailer.createTransport({
 					secure: false,
 					port: 25,
 					host: recipientMXRecord.exchange,
