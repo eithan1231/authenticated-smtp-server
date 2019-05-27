@@ -303,6 +303,8 @@ module.exports = class SMTPServer extends SMTPServerExtendable
 	*/
 	async _onEnd(session, message)
 	{
+		let preserveAttachments = false;
+
 		for(let recipient of session.envelope.rcptTo) {
 			if(await SMTPDelivery.send(session.user, recipient.address, message)) {
 				this.logger.info({
@@ -314,6 +316,7 @@ module.exports = class SMTPServer extends SMTPServerExtendable
 				});
 			}
 			else {
+				//preserveAttachments = true;
 				this.logger.info({
 					txn: 'send',
 					success: false,
@@ -325,11 +328,16 @@ module.exports = class SMTPServer extends SMTPServerExtendable
 		}
 
 		// Cleanup attachments
-		message.attachments.forEach(attachment => {
-			fs.unlink(attachment.path, err => {
-				this.logger.error(err);
+		if(preserveAttachments) {
+			// TODO: Attempt to resend at a later time.
+		}
+		else {
+			message.attachments.forEach(attachment => {
+				fs.unlink(attachment.path, err => {
+					this.logger.error(err);
+				});
 			});
-		});
+		}
 	}
 
 	/**
