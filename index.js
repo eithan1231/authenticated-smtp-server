@@ -24,17 +24,17 @@ const smtpServer = new SMTPServer({
 	size: maxMailSize,
 	name: smtpConfig.hostname,
 
-	key: (smtpConfig.serverSSL.key
+	key: (smtpConfig.serverSSL.key && secure
 		? config.readConfigSync(smtpConfig.serverSSL.key)
 		: false
 	),
 
-	cert: (smtpConfig.serverSSL.cert
+	cert: (smtpConfig.serverSSL.cert && secure
 		? config.readConfigSync(smtpConfig.serverSSL.cert)
 		: false
 	),
 
-	ca: (smtpConfig.serverSSL.ca
+	ca: (smtpConfig.serverSSL.ca && secure
 		? config.readConfigSync(smtpConfig.serverSSL.ca)
 		: false
 	),

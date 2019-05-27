@@ -280,18 +280,14 @@ module.exports = class SMTPServer extends SMTPServerExtendable
 						// Releasing the data.
 						data.release();
 
-						// Copying the data object and assiging new data to it.
-						let attachment = Object.assign({}, data);
-						attachment.cid = attachment.contentId;
-						attachment.path = path;
-
-						// Removing all properties that aren't needed.
-						['content', 'related', 'release', 'contentId', 'headers', 'size', 'checksum', 'type'].forEach(k => {
-							delete attachment[k];
+						message.attachments.push({
+							contentType: data.contentType,
+							contentDisposition: data.contentDisposition,
+							cid: data.cid,
+							contentId: data.contentId,
+							filename: data.filename,
+							path: path,
 						});
-
-						// Adding this attachment to the attachment list.
-						message.attachments.push(attachment);
 					});
 				});
 
