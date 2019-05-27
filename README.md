@@ -1,1 +1,4 @@
-# NOTE: Not ready for production!!!!!!!!! Tests are yet to be done!!!!
+# authenticated-smtp-server
+lightweight SMTP server for mail delivery
+
+TODO: documentation
