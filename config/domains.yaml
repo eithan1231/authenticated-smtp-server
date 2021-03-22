@@ -1,0 +1,11 @@
+example.com:
+  dkim:
+
+    # Whether or not DKIM is enabled for this domain
+    enabled: true
+
+    # key selector for this domain
+    keySelector: "default"
+
+    # filename located in ./config/dkim/*
+    key: "example.com.key"

@@ -1,62 +1,61 @@
-const SMTPServer = require('./library/SMTPServer');
-const logger = require('./library/logger');
-const argument = require('./library/argument');
-const config = require('./library/config');
-const smtpConfig = config.readConfigSync('smtp.yaml');
+const cluster = require('cluster')
+const os = require('os')
 
-const port = argument.get('port') || 587;
-const maxMailSize = argument.get('max-size') || 1024 * 1024 * 16;
-const secure = (argument.get('secure') || 'true') === 'true';
-const authplugin = (argument.get('authplugin') || 'confauth');
+// TODO: Envinment variable for fork count
+const forkCount = os.cpus().length
 
-logger.info({
-	txn: 'general',
-	cause: 'welcome',
-	port: port,
-	maxMailSize : maxMailSize,
-	secure: secure,
-	authplugin: authplugin,
-});
+const workerSMTP = require('./workerSmtp')
+const workerJob = require('./workerJob')
 
-const smtpServer = new SMTPServer({
-	logger: logger,
-	secure: secure,
-	size: maxMailSize,
-	name: smtpConfig.hostname,
+if (cluster.isWorker) {
+  switch (process.env.type) {
+    case 'job':
+      console.log(`Job Worker ${cluster.worker.id} started`)
+      workerJob()
+      break
 
-	key: (smtpConfig.serverSSL.key && secure
-		? config.readConfigSync(smtpConfig.serverSSL.key)
-		: false
-	),
+    case 'smtp':
+      console.log(`SMTP Worker ${cluster.worker.id} started`)
+      workerSMTP()
+      break
 
-	cert: (smtpConfig.serverSSL.cert && secure
-		? config.readConfigSync(smtpConfig.serverSSL.cert)
-		: false
-	),
+    default: throw new Error(`Unexpected worker type ${process.env.type}`)
+  }
+}
 
-	ca: (smtpConfig.serverSSL.ca && secure
-		? config.readConfigSync(smtpConfig.serverSSL.ca)
-		: false
-	),
+if (cluster.isMaster) {
+  // id: type
+  const workerTypes = { }
 
-	// `authplugin` is trusted input, though technically its vulnerable to
-	// directory traversal attacks
-	auth: require(`./authplugins/${authplugin}`),
-});
+  // forks worker and auto-pupulates workerTypes
+  const forkWorker = (type) => {
+    console.log(`Forking ${type} worker`)
 
-smtpServer.on('error', (err) => {
-	// Check if its the type of erro that will kill the smtpServer.
-	logger.error(err);
-});
-smtpServer.listen(port);
+    const tmpWorker = cluster.fork({ type })
+    workerTypes[tmpWorker.id] = type
+  }
 
-process.on("SIGINT", () => {
-	logger.info({
-		txn: 'general',
-		cause: 'sigint'
-	});
+  // spawning
+  for (let i = 0; i < forkCount; i++) {
+    forkWorker('job')
+    forkWorker('smtp')
+  }
 
-	smtpServer.close(() => {
-		process.ext(1);
-	});
-});
+  cluster.on('message', console.log)
+
+  cluster.on('exit', (worker, code, signal) => {
+    const type = workerTypes[worker.id]
+
+    // calculating amount of re-fork attempts from the amount of workerTypes.
+    const retryCount = workerTypes.length - forkCount
+
+    if (retryCount < 10) {
+      console.log(`Worker ${worker.id} ${type} exited code ${code} (sig: ${signal}). retrying`)
+      forkWorker(type)
+    } else {
+      console.log(`Worker ${worker.id} ${type} exited code ${code} (sig: ${signal}). Exceeded refork threshole.`)
+    }
+
+    delete workerTypes[worker.id]
+  })
+}
