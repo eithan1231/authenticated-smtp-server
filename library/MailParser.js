@@ -1,36 +1,31 @@
-const BackendMailParser = require('mailparser').MailParser;
-const EventEmitter = require('events');
-const libmime = require('libmime');
+const MailParser = require('mailparser').MailParser
 
+/**
+  * Overwriting MailParser getHeaders method as we require un-parsed headers.
+  */
+class CustomMailParser extends MailParser {
+  /**
+    * @returns {array} Unmodified headers
+    */
+  getHeaders () {
+    const ret = []
 
-module.exports = class MailParser extends BackendMailParser
-{
-	constructor(config)
-	{
-		super();
-		this._rawHeaders = [];
-	}
+    if (!this.headerLines) {
+      return ret
+    }
 
-	/**
-	* Gets raw headers
-	*/
-	getHeaders()
-	{
-		return this._rawHeaders;
-	}
+    for (const header of this.headerLines) {
+      let value = ((this.libmime.decodeHeader(header.line) || {}).value || '').toString().trim()
+      value = Buffer.from(value, 'binary').toString()
 
-	processHeaders(lines) {
-		// Getting & doing what we need
-		(lines || []).forEach(line => {
-			let value = ((libmime.decodeHeader(line.line) || {}).value || '').toString().trim();
-			value = Buffer.from(value, 'binary').toString();
-			this._rawHeaders.push({
-				key: line.key,
-				value: value
-			});
-		});
+      ret.push({
+        key: header.key,
+        value
+      })
+    }
 
-		// Continue on with normal behaviour.
-		return super.processHeaders(lines);
-	}
+    return ret
+  }
 }
+
+module.exports = CustomMailParser

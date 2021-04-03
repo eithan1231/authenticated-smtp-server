@@ -1,0 +1,12 @@
+# ensure domains are lowercase.
+example.com:
+
+  # First Last <test@example.com>
+  - localpart: "test"
+    name: "First Last"
+    password: "password"
+
+  # Pr. Dr. DoodleDoo <test2@example.com>
+  - localpart: "test2"
+    name: "Pr. Dr. DoodleDoo"
+    password: "password"
