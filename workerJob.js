@@ -2,7 +2,7 @@
 * Application for Agenda Jobs
 */
 
-const agenda = require('./library/agenda')
+const agenda = require('./library/Agenda')
 
 function main () {
   agenda.start()
