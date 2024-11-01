@@ -100,14 +100,22 @@ const parserDataEvent = (data, message) => {
  */
 const deliverMail = async (sender, recipient, message) => {
   try {
+    console.log(`[deliverMail] Started`);
+
     const mxRecords = await resolveMXRecords(recipient.domain);
 
-    for (const mxRecord of mxRecords) {
+    const mxRecordsPriority = mxRecords.sort((a, b) =>  b.priority - a.priority)
+
+    if(mxRecordsPriority.length <= 0) {
+      throw new Error('no mail exchanges found');
+    }
+
+    for (const mxRecord of mxRecordsPriority) {
       // getting dkim for specified domain
       const dkim = await getDkim(sender.domain);
 
       const transporter = nodemailer.createTransport({
-        // logger: true,
+        logger: true,
         secure: false,
         port: 25,
         host: mxRecord.exchange,
@@ -121,17 +129,27 @@ const deliverMail = async (sender, recipient, message) => {
       });
 
       if (!(await transporter.verify())) {
-        throw new Error("Transporter verification failed");
+        console.error(`[deliverMail] Transporter verification failed`);
+        
+        continue;
       }
 
       const info = await transporter.sendMail(message);
       if (!info.accepted.includes(recipient.address)) {
-        throw new Error("info does not include recipient, failed to send");
+        console.error(`[deliverMail] info does not include recipient, attempting next mail exchange record`);
+
+        continue;
       }
+
+      console.log(`[deliverMail] Completed, presumed successfully`);
+      
+      return;
     }
   } catch (err) {
     throw err;
   }
+
+  throw new Error('Unexpecetd, reached end of function. Something did not go okay! uh oh! =(')
 };
 
 /**
