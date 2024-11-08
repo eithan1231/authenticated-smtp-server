@@ -32,7 +32,7 @@ const main = () => {
   });
 
   smtpServer.on("error", (err) => {
-    console.err(err);
+    console.error(err);
   });
 
   smtpServer.once("close", () => {
