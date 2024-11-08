@@ -8,7 +8,7 @@ hostname: "192.168.1.202-ispgods.upperdomain.moredomain.prefixsuffix.com"
 maxMailSize: 16777216
 
 # Private/Public keys the server uses for listening.
-SSLEnable: true
-SSLKey: server.key
-SSLCert: server.cert
-SSLCa: false
+secureServerEnabled: true
+secureServerForced: false
+secureServerPrivateKey: server.key
+secureServerCertificate: server.cert
