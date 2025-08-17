@@ -1,5 +1,5 @@
 import { readFileSync } from "fs";
-import { assert } from "assert";
+import assert from "assert";
 
 let cachedConfig = null;
 
