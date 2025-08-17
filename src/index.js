@@ -21,8 +21,8 @@ const main = () => {
     console.log("[main] Server is closed");
   });
 
-  smtpServer.listen(smtpConfig.port, () => {
-    console.log("[main] Listening on port", smtpConfig.port);
+  smtpServer.listen(config.port, () => {
+    console.log("[main] Listening on port", config.port);
   });
 };
 
