@@ -6,41 +6,29 @@ import fs from "fs";
 import fsPromise from "fs/promises";
 import path from "path";
 import os from "os";
-
-const authorizationConfig = yaml.load(
-  fs.readFileSync("./config/authorization.yaml")
-);
-
-const domainsConfig = yaml.load(fs.readFileSync("./config/domains.yaml"));
+import { getConfig } from "./config.js";
 
 /**
  * gets dkim information for specific domain
  * @param {string} domain
  **/
 export const getDkim = async (domain) => {
-  assert(typeof domain === "string");
+  const config = getConfig();
 
-  if (typeof domainsConfig[domain] === "undefined") {
-    throw new Error("Domain not found");
+  const configDomain = config.domains.find((d) => d.domain === domain);
+
+  if (!configDomain) {
+    throw new Error("Domain not found in config");
   }
 
-  // dkim disabled, return null.
-  if (!domainsConfig[domain].dkim.enabled) {
-    return false;
-  }
-
-  const dkimKey = await fsPromise.readFile(
-    path.join("./config/dkim/", domainsConfig[domain].dkim.key)
-  );
-
-  if (!dkimKey) {
-    return false;
+  if (!configDomain.dkim.enabled) {
+    throw new Error("DKIM not enabled for domain");
   }
 
   return {
-    domainName: domain,
-    keySelector: domainsConfig[domain].dkim.keySelector,
-    privateKey: dkimKey,
+    domainName: configDomain.domain,
+    keySelector: configDomain.dkim.selector,
+    privateKey: configDomain.dkim.key,
     cacheDir: os.tmpdir(),
   };
 };
@@ -53,25 +41,34 @@ export const getDkim = async (domain) => {
  * @throws {Error} on failure
  */
 export const authorise = (email, password) => {
+  const config = getConfig();
+
   const address = parseAddress(email);
 
-  // check domain exists
-  if (typeof authorizationConfig[address.domain] !== "object") {
+  if (!address) {
     throw new Error("Domain not found");
   }
 
-  // find local part in the domain index
-  for (const profile of authorizationConfig[address.domain]) {
-    if (
-      profile.localpart === address.localpart &&
-      profile.password === password
-    ) {
+  for (const domain of config.domains) {
+    if (domain.domain !== address.domain) {
+      continue;
+    }
+
+    for (const user of domain.users) {
+      if (user.email !== address.address) {
+        continue;
+      }
+
+      if (user.password !== password) {
+        continue;
+      }
+
       return {
-        address: `${profile.localpart}@${address.domain}`,
-        addressFormatted: `${profile.name} <${profile.localpart}@${address.domain}>`,
-        localpart: profile.localpart,
+        address: user.email,
+        addressFormatted: `${user.name} <${user.email}>`,
+        localpart: address.localpart,
         domain: address.domain,
-        name: profile.name,
+        name: user.name,
       };
     }
   }

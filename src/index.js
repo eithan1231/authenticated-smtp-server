@@ -1,28 +1,16 @@
+import { getConfig } from "./config.js";
 import { SMTPServer } from "./server.js";
-import { readFileSync } from "fs";
-import path from "path";
-import yaml from "js-yaml";
 
 const main = () => {
-  const smtpConfig = yaml.load(readFileSync("./config/smtp.yaml"));
-
-  const secureServerEnabled = smtpConfig.secureServerEnabled;
-
-  const secureServerPrivateKey = smtpConfig.secureServerPrivateKey
-    ? readFileSync(path.join("./config/", smtpConfig.secureServerPrivateKey))
-    : false;
-
-  const secureServerCertificate = smtpConfig.secureServerCertificate
-    ? readFileSync(path.join("./config/", smtpConfig.secureServerCertificate))
-    : false;
+  const config = getConfig();
 
   const smtpServer = new SMTPServer({
-    size: smtpConfig.maxMailSize,
-    name: smtpConfig.hostname,
+    size: config.maxMailSize,
+    name: config.hostname,
 
-    secure: smtpConfig.secureServerEnabled && smtpConfig.secureServerForced,
-    key: secureServerEnabled ? secureServerPrivateKey : null,
-    cert: secureServerEnabled ? secureServerCertificate : null,
+    secure: config.secureServerEnabled && config.secureServerForced,
+    key: config.secureServerPrivateKey,
+    cert: config.secureServerCertificate,
   });
 
   smtpServer.on("error", (err) => {

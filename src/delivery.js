@@ -10,11 +10,10 @@ import tmp from "tmp";
 import yaml from "js-yaml";
 import path from "path";
 import assert from "assert";
+import { getConfig } from "./config.js";
 
 // promisify tmp
 const tmpPromise = promisify(tmp.file);
-
-const smtpConfig = yaml.load(readFileSync(path.join("./config/smtp.yaml")));
 
 // headers that should be ignored from the received mail object. They are ignored
 // due to their debug tracing, exposure of backend infastrucutre, are manually
@@ -100,14 +99,16 @@ const parserDataEvent = (data, message) => {
  */
 const deliverMail = async (sender, recipient, message) => {
   try {
+    const config = getConfig();
+
     console.log(`[deliverMail] Started`);
 
     const mxRecords = await resolveMXRecords(recipient.domain);
 
-    const mxRecordsPriority = mxRecords.sort((a, b) =>  b.priority - a.priority)
+    const mxRecordsPriority = mxRecords.sort((a, b) => b.priority - a.priority);
 
-    if(mxRecordsPriority.length <= 0) {
-      throw new Error('no mail exchanges found');
+    if (mxRecordsPriority.length <= 0) {
+      throw new Error("no mail exchanges found");
     }
 
     for (const mxRecord of mxRecordsPriority) {
@@ -119,7 +120,7 @@ const deliverMail = async (sender, recipient, message) => {
         secure: false,
         port: 25,
         host: mxRecord.exchange,
-        name: smtpConfig.hostname,
+        name: config.hostname,
         dkim: dkim,
         tls: {
           // self signed servers. most aren't really signed, security mostly
@@ -130,26 +131,30 @@ const deliverMail = async (sender, recipient, message) => {
 
       if (!(await transporter.verify())) {
         console.error(`[deliverMail] Transporter verification failed`);
-        
+
         continue;
       }
 
       const info = await transporter.sendMail(message);
       if (!info.accepted.includes(recipient.address)) {
-        console.error(`[deliverMail] info does not include recipient, attempting next mail exchange record`);
+        console.error(
+          `[deliverMail] info does not include recipient, attempting next mail exchange record`
+        );
 
         continue;
       }
 
       console.log(`[deliverMail] Completed, presumed successfully`);
-      
+
       return;
     }
   } catch (err) {
     throw err;
   }
 
-  throw new Error('Unexpecetd, reached end of function. Something did not go okay! uh oh! =(')
+  throw new Error(
+    "Unexpected, reached end of function. Something did not go okay! uh oh! =("
+  );
 };
 
 /**

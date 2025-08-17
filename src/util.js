@@ -35,6 +35,7 @@ export const resolveMXRecords = async (hostname) => {
 /**
  * Parses email address into local part and domain
  * @param {string} address
+ * @returns {{localpart: string, domain: string, address: string}|false}
  */
 export const parseAddress = (address) => {
   assert(typeof address === "string");
